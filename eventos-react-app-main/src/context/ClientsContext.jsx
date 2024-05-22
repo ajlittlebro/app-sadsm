@@ -21,15 +21,11 @@ export const useClients = () => {
 
 export function ClientsProvider({ children }) {
   const [clients, setClients] = useState([]);
-  const [dataLoaded, setDataLoaded] = useState(false);
 
   const getClients = async () => {
     try {
-      if (!dataLoaded) {
-        const res = await getClientRequest();
-        setClients(res.data);
-        setDataLoaded(true);
-      }
+      const res = await getClientsRequest();
+      setClients(res.data);
     } catch (error) {
       console.error(error);
     }
@@ -37,8 +33,8 @@ export function ClientsProvider({ children }) {
 
   const createClient = async (client) => {
     try {
-      const res = await createClientRequest(client);
-      setClients([...clients, res.data]);
+      await createClientRequest(client);
+      await getClients(); // Obtener la lista actualizada de clientes
     } catch (error) {
       console.error(error);
     }
@@ -57,7 +53,7 @@ export function ClientsProvider({ children }) {
 
   const getClient = async (id) => {
     try {
-      const res = await getClientsRequest(id);
+      const res = await getClientRequest(id);
       return res.data;
     } catch (error) {
       console.error(error);
@@ -66,10 +62,8 @@ export function ClientsProvider({ children }) {
 
   const updateClient = async (id, client) => {
     try {
-      const res = await updateClientRequest(id, client);
-      setClients(
-        clients.map((c) => (c.idCliente === id ? { ...c, ...client } : c))
-      );
+      await updateClientRequest(id, client);
+      await getClients(); // Obtener la lista actualizada de clientes
     } catch (error) {
       console.error(error);
     }
@@ -88,7 +82,6 @@ export function ClientsProvider({ children }) {
         deleteClient,
         getClient,
         updateClient,
-        setDataLoaded,
       }}
     >
       {children}
