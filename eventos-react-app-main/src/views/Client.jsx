@@ -1,16 +1,15 @@
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { Card, Label, TextInput, Table } from "flowbite-react";
-import { UserContext } from "../context/UserContext"; // Importa el contexto
+import { useClients } from "../context/ClientsContext"; // Importa el contexto
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import Swal from 'sweetalert2';
+import Swal from "sweetalert2";
 
 // Components
 import SideBar from "../components/SideBar";
 
 const Client = () => {
-  const { addCliente, editCliente, deleteCliente, user } =
-    useContext(UserContext); // Usa los métodos del contexto y accede a los clientes
+  const { clients, createClient, updateClient, deleteClient } = useClients(); // Usa los métodos del contexto y accede a los clientes
 
   const [inputEmail, setInputEmail] = useState("");
   const [inputNombre, setInputNombre] = useState("");
@@ -19,40 +18,38 @@ const Client = () => {
 
   const handleSave = () => {
     const newCliente = {
-      correo: inputEmail,
-      nombre: inputNombre,
-      direccion: inputDireccion,
+      Correo: inputEmail,
+      Nombre: inputNombre,
+      Direccion: inputDireccion,
     };
 
     if (editIndex !== null) {
-      editCliente(editIndex, newCliente);
+      updateClient(editIndex, newCliente);
       setEditIndex(null); // Reiniciar el índice de edición después de guardar
     } else {
-      addCliente(newCliente);
+      createClient(newCliente);
     }
-
-    console.log(newCliente);
 
     // Limpiar los campos del formulario después de guardar
     setInputEmail("");
     setInputNombre("");
     setInputDireccion("");
 
-    //Sweet alert para guardar
+    // Sweet alert para guardar
     Swal.fire({
       title: "Cliente guardado.",
       text: "El cliente ha sido guardado correctamente.",
-      icon: "success"
+      icon: "success",
     });
   };
 
-  const handleEdit = (index) => {
-    const cliente = user.clientes[index];
-    setInputEmail(cliente.correo);
-    setInputNombre(cliente.nombre);
-    setInputDireccion(cliente.direccion);
-    setEditIndex(index); // Establecer el índice de edición
-
+  const handleEdit = (id) => {
+    const cliente = clients.find((cliente) => cliente.idCliente === id);
+    setInputEmail(cliente.Correo);
+    setInputNombre(cliente.Nombre);
+    setInputDireccion(cliente.Direccion);
+    setEditIndex(id); // Establecer el índice de edición
+  
     Swal.fire({
       title: "Cliente en edición.",
       text: "La información del cliente se ha cargado en el formulario para su edición.",
@@ -72,17 +69,17 @@ const Client = () => {
     if (table) {
       doc.autoTable({ html: table });
       doc.save("historial_clientes.pdf");
-      
+
       Swal.fire({
         title: "PDF generado correctamente.",
-        text: "Guardalo en tu dispositivo para tener un respaldo.",
-        icon: "success"
+        text: "Guárdalo en tu dispositivo para tener un respaldo.",
+        icon: "success",
       });
     } else {
       Swal.fire({
         title: "Error al generar PDF.",
         text: "No se encontró la tabla de clientes.",
-        icon: "error"
+        icon: "error",
       });
     }
   };
@@ -180,28 +177,28 @@ const Client = () => {
                       <Table.HeadCell>Acciones</Table.HeadCell>
                     </Table.Head>
                     <Table.Body className="divide-y">
-                      {user.clientes.map((cliente, index) => (
+                      {clients.map((cliente) => (
                         <Table.Row
-                          key={index}
+                          key={cliente.idCliente}
                           className="bg-white dark:border-gray-700 dark:bg-gray-800"
                         >
                           <Table.Cell className="whitespace-nowrap font-medium text-gray-900 dark:text-white">
-                            {index + 1}
+                            {cliente.idCliente}
                           </Table.Cell>
                           <Table.Cell className="whitespace-nowrap font-medium text-gray-900 dark:text-white">
-                            {cliente.correo}
+                            {cliente.Correo}
                           </Table.Cell>
-                          <Table.Cell>{cliente.nombre}</Table.Cell>
-                          <Table.Cell>{cliente.direccion}</Table.Cell>
+                          <Table.Cell>{cliente.Nombre}</Table.Cell>
+                          <Table.Cell>{cliente.Direccion}</Table.Cell>
                           <Table.Cell>
                             <button
                               type="button"
                               onClick={() => {
-                                deleteCliente(index);
+                                deleteClient(cliente.idCliente);
                                 Swal.fire({
                                   title: "Cliente eliminado.",
                                   text: "El cliente ha sido eliminado correctamente.",
-                                  icon: "success"
+                                  icon: "success",
                                 });
                               }}
                               className="text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800"
@@ -210,7 +207,7 @@ const Client = () => {
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleEdit(index)}
+                              onClick={() => handleEdit(cliente.idCliente)}
                               className="text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
                             >
                               Editar

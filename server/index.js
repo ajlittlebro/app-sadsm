@@ -3,7 +3,8 @@ import fileUpload from "express-fileupload";
 import { PORT } from "./config.js";
 import cors from "cors";
 import morgan from "morgan";
-import cookieParser from "cookie-parser";
+//import cookieParser from "cookie-parser";
+import clientsRoutes from "./routes/clients.routes.js";
 const app = express();
 
 app.use(
@@ -20,6 +21,7 @@ app.use(
     tempFileDir: "./upload",
   })
 );
-app.use(cookieParser());
+//app.use(cookieParser());
+app.use("/api", clientsRoutes);
 app.listen(PORT);
 console.log("Server is listening on port " + PORT);

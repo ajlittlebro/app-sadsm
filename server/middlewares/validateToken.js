@@ -1,4 +1,4 @@
-import Jwt from "jsonwebtoken";
+/*import Jwt from "jsonwebtoken";
 import { DB_TOKEN } from "../config.js";
 export const authRequired = (req, res, next) => {
   const { token } = req.cookies;
@@ -15,3 +15,4 @@ export const authRequired = (req, res, next) => {
     next();
   });
 };
+*/

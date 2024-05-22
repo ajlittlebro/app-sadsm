@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { UserProvider } from './context/UserContext';
+import { ClientsProvider } from './context/ClientsContext';
 
 // Views
 import Login from './views/Login';
@@ -11,6 +12,7 @@ import BuyReports from './views/BuyReports';
 function App() {
   return (
     <UserProvider>
+      <ClientsProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Login />} />
@@ -21,6 +23,7 @@ function App() {
           <Route path="*" element={<h1>Not Found</h1>} />
         </Routes>
       </BrowserRouter>
+      </ClientsProvider>
     </UserProvider>
   );
 }
