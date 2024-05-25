@@ -1,6 +1,8 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { UserProvider } from './context/UserContext';
 import { ClientsProvider } from './context/ClientsContext';
+import { EventsProvider } from './context/EventsContext';
+import { CotizacionesProvider } from './context/HistoryContext';
 
 // Views
 import Login from './views/Login';
@@ -13,6 +15,8 @@ function App() {
   return (
     <UserProvider>
       <ClientsProvider>
+      <EventsProvider>
+      <CotizacionesProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Login />} />
@@ -23,6 +27,8 @@ function App() {
           <Route path="*" element={<h1>Not Found</h1>} />
         </Routes>
       </BrowserRouter>
+      </CotizacionesProvider>
+      </EventsProvider>
       </ClientsProvider>
     </UserProvider>
   );
