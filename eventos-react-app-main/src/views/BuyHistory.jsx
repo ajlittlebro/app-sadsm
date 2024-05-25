@@ -3,15 +3,14 @@ import { Table } from "flowbite-react";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import Swal from 'sweetalert2';
+import { useCotizaciones, CotizacionesProvider } from "../context/HistoryContext";
 
 // Components
 import SideBar from "../components/SideBar";
 
-// Data
-import compradores from "../constants/buyersConfigs";
-
 const BuyHistory = () => {
   const [showTable, setShowTable] = useState(false);
+  const { cotizaciones } = useCotizaciones();
 
   const toggleTable = () => {
     setShowTable(!showTable);
@@ -26,7 +25,7 @@ const BuyHistory = () => {
       
       Swal.fire({
         title: "PDF generado correctamente.",
-        text: "Guardalo en tu dispositivo para tener un respaldo.",
+        text: "Guárdalo en tu dispositivo para tener un respaldo.",
         icon: "success"
       });
     } else {
@@ -39,7 +38,7 @@ const BuyHistory = () => {
   };
 
   return (
-    <>
+    <CotizacionesProvider>
       <SideBar />
 
       <div className="p-4 sm:ml-64">
@@ -75,14 +74,11 @@ const BuyHistory = () => {
                       <Table.HeadCell className="p-2">Id</Table.HeadCell>
                       <Table.HeadCell>Fecha</Table.HeadCell>
                       <Table.HeadCell>Salón de eventos</Table.HeadCell>
-                      <Table.HeadCell>Fecha del evento</Table.HeadCell>
-                      <Table.HeadCell>Cantidad de personas</Table.HeadCell>
-                      <Table.HeadCell>Tipo de paquete</Table.HeadCell>
                       <Table.HeadCell>Cliente</Table.HeadCell>
-                      <Table.HeadCell>Ganancia total</Table.HeadCell>
+                      <Table.HeadCell>Monto</Table.HeadCell>
                     </Table.Head>
                     <Table.Body className="divide-y">
-                      {compradores.map((venta) => (
+                      {cotizaciones.map((venta) => (
                         <Table.Row
                           key={venta.id}
                           className="bg-white dark:border-gray-700 dark:bg-gray-800"
@@ -92,12 +88,11 @@ const BuyHistory = () => {
                           </Table.Cell>
                           <Table.Cell>{venta.fecha}</Table.Cell>
                           <Table.Cell>{venta.salonDeEventos}</Table.Cell>
-                          <Table.Cell>{venta.fechaDelEvento}</Table.Cell>
-                          <Table.Cell>{venta.cantidadPersonas}</Table.Cell>
-                          <Table.Cell>{venta.tipoPaquete}</Table.Cell>
                           <Table.Cell>{venta.cliente}</Table.Cell>
                           <Table.Cell>
-                            ${venta.gananciaTotal.toFixed(2)}
+                            {typeof venta.monto === "number"
+                              ? `$${venta.monto.toFixed(2)}`
+                              : venta.monto}
                           </Table.Cell>
                         </Table.Row>
                       ))}
@@ -109,7 +104,7 @@ const BuyHistory = () => {
           </div>
         </div>
       </div>
-    </>
+    </CotizacionesProvider>
   );
 };
 
