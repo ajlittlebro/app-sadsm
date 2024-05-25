@@ -1,35 +1,54 @@
-import { useState, useContext } from "react";
+import { useState, useEffect } from "react";
 import { Table, Card, Label, TextInput } from "flowbite-react";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import { UserContext } from "../context/UserContext"; // Importa el contexto de usuario
 import Swal from "sweetalert2";
-
-// Components
 import SideBar from "../components/SideBar";
+import { useEvents } from "../context/EventsContext"; // Usa el contexto de eventos
 
 const BuyReports = () => {
-  const { user, addEvento } = useContext(UserContext); // Usa el contexto de usuario
+  const { events, createEvent, salons, clients, packages, getEvents } =
+    useEvents(); // Usa el contexto de eventos
 
   const [inputFecha, setInputFecha] = useState("");
   const [inputLugar, setInputLugar] = useState("");
   const [inputHora, setInputHora] = useState("");
-  const [inputNombreSalon, setInputNombreSalon] = useState("");
-  const [inputClienteIndex, setInputClienteIndex] = useState(0); // Estado para el índice del cliente seleccionado
-  const [inputPaquete, setInputPaquete] = useState("económico"); // Estado para el tipo de paquete
+  const [inputSalon, setInputSalon] = useState("");
+  const [inputCliente, setInputCliente] = useState("");
+  const [inputPaquete, setInputPaquete] = useState("");
+
+  useEffect(() => {
+    getEvents(); // Obtener los eventos al montar el componente
+  }, [getEvents]); // Dependencia vacía para ejecutar una vez
 
   const handleSaveEvento = () => {
-    const cliente = user.clientes[inputClienteIndex];
+    // Validar que todos los campos estén llenos
+    if (
+      !inputCliente ||
+      !inputFecha ||
+      !inputLugar ||
+      !inputHora ||
+      !inputSalon ||
+      !inputPaquete
+    ) {
+      Swal.fire({
+        title: "Error",
+        text: "Por favor, complete todos los campos.",
+        icon: "error",
+      });
+      return;
+    }
+
     const newEvento = {
-      cliente: cliente.nombre,
-      fecha: inputFecha,
-      lugar: inputLugar,
-      hora: inputHora,
-      nombreSalon: inputNombreSalon,
-      paquete: inputPaquete,
-      precio: calcularPrecio(inputPaquete), // Calcular el precio del paquete
+      idCliente: inputCliente,
+      Fecha: inputFecha,
+      Lugar: inputLugar,
+      Hora: inputHora,
+      idSalon: inputSalon,
+      idPaquete: inputPaquete,
     };
-    addEvento(newEvento); // Agregar evento al cliente
+
+    createEvent(newEvento); // Agregar evento
 
     console.log(newEvento);
 
@@ -37,29 +56,16 @@ const BuyReports = () => {
     setInputFecha("");
     setInputLugar("");
     setInputHora("");
-    setInputNombreSalon("");
-    setInputPaquete("económico");
+    setInputSalon("");
+    setInputCliente("");
+    setInputPaquete("");
 
-    //Sweet alert para guardar  
+    // Sweet alert para guardar
     Swal.fire({
       title: "Evento guardado.",
       text: "El evento ha sido guardado correctamente.",
       icon: "success",
     });
-  };
-
-  const calcularPrecio = (paquete) => {
-    // Calcular precio según el tipo de paquete
-    switch (paquete) {
-      case "económico":
-        return 10000;
-      case "express":
-        return 20000;
-      case "premium":
-        return 30000;
-      default:
-        return 0;
-    }
   };
 
   const [showTable, setShowTable] = useState(false);
@@ -89,19 +95,20 @@ const BuyReports = () => {
   };
 
   const handleTicket = (index) => {
-    const evento = user.eventos[index];
+    const evento = events[index];
 
     Swal.fire({
       title: "Cotización del Evento",
       html: `
         <div>
-          <p><strong>Cliente:</strong> ${evento.cliente}</p>
-          <p><strong>Fecha:</strong> ${evento.fecha}</p>
-          <p><strong>Lugar:</strong> ${evento.lugar}</p>
-          <p><strong>Hora:</strong> ${evento.hora}</p>
-          <p><strong>Nombre del Salón:</strong> ${evento.nombreSalon}</p>
-          <p><strong>Paquete:</strong> ${evento.paquete}</p>
-          <p><strong>Precio:</strong> $${evento.precio.toFixed(2)}</p>
+          <p><strong>Cliente:</strong> ${evento.Nombre}</p>
+          <p><strong>Fecha:</strong> ${evento.Fecha}</p>
+          <p><strong>Lugar:</strong> ${evento.Lugar}</p>
+          <p><strong>Hora:</strong> ${evento.Hora}</p>
+          <p><strong>Nombre del Salón:</strong> ${evento.Salon}</p>
+          <p><strong>Monto:</strong> ${
+            typeof evento.Monto === "number" ? `$${evento.Monto.toFixed(2)}` : evento.Monto
+          }
         </div>
       `,
       showCancelButton: false,
@@ -135,9 +142,19 @@ const BuyReports = () => {
                 Asigna eventos a clientes y genera cotizaciones
               </p>
             </div>
+            <div className="flex justify-center mb-4">
+              <button
+                type="button"
+                onClick={toggleTable}
+                className="focus:outline-none text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2"
+                
+              >
+                {showTable ? "Ocultar" : "Mostrar"} Eventos
+              </button>
+            </div>
             <div className="flex">
-              <div className="w-5/12">
-                <Card className="max-w-sm">
+              <div className={`w-full ${showTable ? 'hidden' : ''}`}>
+                <Card className="max-w-2xl mx-auto">
                   <form className="flex flex-col gap-4">
                     <div>
                       <div className="mb-2 block">
@@ -179,13 +196,21 @@ const BuyReports = () => {
                       <div className="mb-2 block">
                         <Label htmlFor="nombreSalon" value="Nombre del Salón" />
                       </div>
-                      <TextInput
+                      <select
                         id="nombreSalon"
-                        type="text"
-                        value={inputNombreSalon}
-                        onChange={(e) => setInputNombreSalon(e.target.value)}
+                        value={inputSalon}
+                        onChange={(e) => setInputSalon(e.target.value)}
                         required
-                      />
+                      >
+                        <option value="" disabled>
+                          Seleccionar salón
+                        </option>
+                        {salons.map((salon) => (
+                          <option key={salon.idSalon} value={salon.idSalon}>
+                            {salon.Nombre}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <div className="mb-2 block">
@@ -193,14 +218,18 @@ const BuyReports = () => {
                       </div>
                       <select
                         id="cliente"
-                        value={inputClienteIndex}
-                        onChange={(e) => setInputClienteIndex(e.target.value)}
+                        value={inputCliente}
+                        onChange={(e) => setInputCliente(e.target.value)}
                         required
                       >
-                        {user.clientes.map((cliente, index) => (
-                          <option key={index} value={index}>
-                            {cliente.nombre}
-                          </option>
+                        <option value="" disabled>
+                          Seleccionar cliente
+                        </option>
+                        {clients.map((client) => (
+                          <option
+                            key={client.idCliente}
+                            value={client.idCliente}
+                          >{`${client.Nombre} `}</option>
                         ))}
                       </select>
                     </div>
@@ -214,73 +243,72 @@ const BuyReports = () => {
                         onChange={(e) => setInputPaquete(e.target.value)}
                         required
                       >
-                        <option value="económico">Económico</option>
-                        <option value="express">Express</option>
-                        <option value="premium">Premium</option>
+                        <option value="" disabled>
+                          Seleccionar paquete
+                        </option>
+                        {packages.map((pkg) => (
+                          <option key={pkg.idPaquete} value={pkg.idPaquete}>
+                            {pkg.Nombre}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <button
                       type="button"
                       onClick={handleSaveEvento}
-                      className="focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+                      className="focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2"
                     >
                       Guardar Evento
                     </button>
                   </form>
                 </Card>
               </div>
-              <div className="w-full px-10">
-                <div className="mb-5 pb-5 flex justify-center gap-10 bg-slate-100 border rounded-lg">
-                  <button
-                    onClick={toggleTable}
-                    className="mt-4 p-2 bg-blue-500 text-white rounded-md focus:outline-none hover:bg-blue-600"
+              <div className={`w-full ${!showTable ? 'hidden' : ''}`}>
+                <Card className="max-w-7xl mx-auto">
+                <button
+                    type="button"
+                    onClick={printTableToPdf}
+                    className="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2"
                   >
-                    {showTable ? "Ocultar tabla" : "Mostrar tabla"}
+                    Generar PDF
                   </button>
-                  <button
-                    onClick={() => printTableToPdf()}
-                    className="mt-4 p-2 bg-green-500 text-white rounded-md focus:outline-none hover:bg-green-600"
-                  >
-                    Imprimir PDF
-                  </button>
-                </div>
-                {showTable && (
-                  <Table className="text-center" id="eventosTable">
+                  <Table id="eventosTable" className="w-full">
                     <Table.Head>
-                      <Table.HeadCell className="p-2">Cliente</Table.HeadCell>
+                      <Table.HeadCell>Cliente</Table.HeadCell>
+                      <Table.HeadCell>Fecha</Table.HeadCell>
                       <Table.HeadCell>Lugar</Table.HeadCell>
                       <Table.HeadCell>Hora</Table.HeadCell>
                       <Table.HeadCell>Nombre del Salón</Table.HeadCell>
-                      <Table.HeadCell>Paquete</Table.HeadCell>
                       <Table.HeadCell>Precio</Table.HeadCell>
                       <Table.HeadCell>Acciones</Table.HeadCell>
                     </Table.Head>
                     <Table.Body className="divide-y">
-                      {user.eventos.map((evento, index) => (
-                        <Table.Row
-                          key={index}
-                          className="bg-white dark:border-gray-700 dark:bg-gray-800"
-                        >
-                          <Table.Cell>{evento.cliente}</Table.Cell>
-                          <Table.Cell>{evento.lugar}</Table.Cell>
-                          <Table.Cell>{evento.hora}</Table.Cell>
-                          <Table.Cell>{evento.nombreSalon}</Table.Cell>
-                          <Table.Cell>{evento.paquete}</Table.Cell>
-                          <Table.Cell>${evento.precio.toFixed(2)}</Table.Cell>
+                      {events.map((evento, index) => (
+                        <Table.Row key={index}>
+                          <Table.Cell>{evento.Nombre}</Table.Cell>
+                          <Table.Cell>{evento.Fecha}</Table.Cell>
+                          <Table.Cell>{evento.Lugar}</Table.Cell>
+                          <Table.Cell>{evento.Hora}</Table.Cell>
+                          <Table.Cell>{evento.Salon}</Table.Cell>
+                          <Table.Cell>
+                            {typeof evento.Monto === "number"
+                              ? `$${evento.Monto.toFixed(2)}`
+                              : evento.Monto}
+                          </Table.Cell>
                           <Table.Cell>
                             <button
-                              type="button"
                               onClick={() => handleTicket(index)}
-                              className="text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+                              className="text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2"
                             >
-                              Cotizar
+                              Ver Cotización
                             </button>
                           </Table.Cell>
                         </Table.Row>
                       ))}
                     </Table.Body>
                   </Table>
-                )}
+                  
+                </Card>
               </div>
             </div>
           </div>
